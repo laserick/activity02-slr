@@ -62,9 +62,17 @@ In the R code chunk below titled `load-data`, you will type the code that reads 
 - Rather than downloading this file, uploading to RStudio, then reading it in, explore how to load this file directly from the provided URL with `readr::read_csv` (`{readr}` is part of `{tidyverse}`).
 - Assign this data set into a data frame named `hfi` (short for "Human Freedom Index").
 
+```{r}
+#Loading hfi data
+hfi <- read_csv('hfi.csv')
+```
+
+
 After doing this and viewing the loaded data, answer the following questions:
 
 1. What are the dimensions of the dataset?
+(1458,123)
+
   What does each row represent?
 
 The dataset spans a lot of years.
@@ -75,7 +83,7 @@ In the R code chunk below titled `hfi-2016`, type the code that does the followi
 - Assigns the result to a data frame named `hfi_2016`.
 
 ```{r hfi-2016}
-
+hfi_2016 <- hfi %>% filter(year == 2016)
 ```
 
 ### 1. Identify our research question(s)
@@ -91,15 +99,28 @@ Specifically, we are going to use the political pressures and controls on media 
 Answer the following questions (use your markdown skills) and complete the following tasks.
 
 2. What type of plot would you use to display the distribution of the personal freedom scores, `pf_score`? 
+Histogram
   Would this be the same type of plot to display the distribution of the political pressures and controls on media content index, `pf_expression_control`?
 
-
+Yes
 
 - In the R code chunk below titled `univariable-plots`, type the R code that displays this plot for `pf_score`.
 - In the R code chunk below titled `univariable-plots`, type the R code that displays this plot for `pf_expression_control`.
 
 ```{r distribution-plots}
+#histogram of pf_score
+hfi_2016 %>% 
+  ggplot(aes(x=pf_score))+
+  geom_histogram(binwidth = 0.25) +
+  ggtitle("univariate-plot")
 
+#histogram of pf_expression_control
+hfi_2016 %>% 
+  ggplot(aes(x=pf_expression_control))+
+  geom_histogram(binwidth = 0.25) +
+  ggtitle("univariate-plot")
+  
+  
 ```
 
 4. Comment on each of these two distributions. 
@@ -108,16 +129,20 @@ Answer the following questions (use your markdown skills) and complete the follo
 
 
 3. What type of plot would you use to display the relationship between the personal freedom score, `pf_score`, and the political pressures and controls on media content index,`pf_expression_control`?
-
+Scatterplot
 
 
 - In the R code chunk below titled `relationship-plot`, plot this relationship using the variable `pf_expression_control` as the predictor/explanatory variable.
 
 ```{r relationship-plot}
-
+hfi_2016 %>% 
+  ggplot(aes(x=pf_score, y= pf_expression_control)) +
+  geom_point() + geom_smooth(method=lm) + 
+  ggtitle('relationship-plot')
 ```
 
 4. Does the relationship look linear?
+Yes
   If you knew a country's `pf_expression_control`, or its score out of 10, with 0 being the most, of political pressures and controls on media content, would you be comfortable using a linear model to predict the personal freedom score?
 
 #### Challenge
@@ -125,13 +150,30 @@ Answer the following questions (use your markdown skills) and complete the follo
 For each plot and using your `{dplyr}` skills, obtain the appropriate numerical summary statistics and provide more detailed descriptions of these plots.
 For example, in (4) you were asked to comment on the center, spread, shape, and potential outliers.
 What measures could/should be used to describe these?
+mean, standard deviation, skewness, lower and upper quartiles
 You might not know of one for each of those terms.
 
 What numerical summary would you use to describe the relationship between two numerical variables?
 (hint: explore the `cor` function from Base R)
 
 ```{r challenge}
+library(e1071)
+sum_stats_pf_score <- hfi_2016 %>% 
+  dplyr::summarize(mean_pf_score = mean(pf_score), std_pf_score = sd(pf_score), skew_pf_score = skewness(pf_score), min_pf_score = min(pf_score),
+                   max_pf_score = max(pf_score)) 
+print(sum_stats_pf_score)
 
+sum_stats_pf_expression_control <- hfi_2016 %>% 
+  dplyr::summarize(mean_pf_expression_control = mean(pf_expression_control), std_pf_expression_control = sd(pf_expression_control),
+                   skew_pf_expression_control = skewness(pf_expression_control), min_pf_expression_control = min(pf_expression_control),
+                   max_pf_expression_control = max(pf_expression_control)) 
+
+print(sum_stats_pf_expression_control)
+
+
+# Correlation Coefficient
+correlation_coefficient <-cor(hfi_2016$pf_score, hfi_2016$pf_expression_control)
+correlation_coefficient
 ```
 
 
@@ -145,7 +187,7 @@ To begin, we will create a `{parsnip}` specification for a linear model.
 
 - In the code chunk below titled `parsnip-spec`, replace "verbatim" with "r" just before the code chunk title.
 
-```{verbatim parsnip-spec}
+```{r parsnip-spec}
 lm_spec <- linear_reg() %>%
   set_mode("regression") %>%
   set_engine("lm")
@@ -167,7 +209,7 @@ Look at your knitted document to see how this syntax appears.
 
 - In the code chunk below titled `fit-lm`, replace "verbatim" with "r" just before the code chunk title. 
 
-```{verbatim fit-lm}
+```{r fit-lm}
 slr_mod <- lm_spec %>% 
   fit(pf_score ~ pf_expression_control, data = hfi_2016)
 
@@ -179,10 +221,12 @@ The above code fits our SLR model, then provides a `tidy` parameter estimates ta
 5. Using the `tidy` output, update the below formula with the estimated parameters.
   That is, replace "intercept" and "slope" with the appropriate values
 
-$\hat{\texttt{pf\score}} = intercept + slope \times \texttt{pf\_expression\_control}$
+$\hat{\texttt{pf\score}} = 4.2838153 + 0.5418452 \times \texttt{pf\_expression\_control}$
 
 
 6. Interpret each of the estimated parameters from (5) in the context of this research question.
+The "slope"- for every unit increase in pf_expression_score the pf_score increases 0.54 times.
+The "intercept" - The pf_score is 4.28 when pf_expression_score is 0.
   That is, what do these values represent?
 
 ## Day 2
@@ -202,20 +246,20 @@ We use `glance` from  `{broom}` (which is automatically loaded with `{tidymodels
 
 - In the code chunk below titled `glance-lm`, replace "verbatim" with "r" just before the code chunk title. 
 
-```{verbatim glance-mod}
+```{r glance-mod}
 glance(slr_mod)
 ```
 
 After doing this and running the code, answer the following questions:
 
 7. What is the value of $R^2$ for this model?
-
+    0.7141342	
 
 
 8. What does this value mean in the context of this model?
   Think about what would a "good" value of $R^2$ would be?
   Can/should this value be "perfect"?
-
+  71.41% of the variation in the response variable is explained by the model.
 
 
 #### 4.B: Assess with test/train
@@ -231,13 +275,20 @@ Using the `diamonds` example provided to you in the Day 2 `README`, do the follo
 - Create an initial 80-20 split of the `hfi_2016` dataset
 - Using your initial split R object, assign the two splits into a training R object and a testing R object.
 
+```{r}
+set.seed(123)
+hfi_split <- initial_split(hfi_2016, prop = 0.80)
+train_split <- training(hfi_split)
+test_split <- testing(hfi_split)
+```
+
 Now, you will use your training dataset to fit a SLR model.
 
 - In the code chunk below titled `train-fit-lm`, replace "verbatim" with "r" just before the code chunk title and update the data set to your training R object you just created.
 
-```{verbatim train-fit-lm}
+```{r train-fit-lm}
 slr_train <- lm_spec %>% 
-  fit(pf_score ~ pf_expression_control, data = hfi_2016)
+  fit(pf_score ~ pf_expression_control, data = train_split)
 
 tidy(slr_train)
 ```
@@ -258,8 +309,8 @@ Now we will assess using the testing data set.
 
 - In the code chunk below titled `train-fit-lm`, replace "verbatim" with "r" just before the code chunk title and update `data_test` to whatever R object you assigned your testing data to above.
   
-```{verbatim glance-test}
-test_aug <- augment(slr_train, new_data = data_test)
+```{r glance-test}
+test_aug <- augment(slr_train, new_data= test_split)
 test_aug
 ```
 
@@ -289,9 +340,8 @@ We can use `broom::augment` to calculate these.
 
 - In the code chunk below titled `augment`, replace "verbatim" with "r" just before the code chunk title and update `data_test` to whatever R object you assigned your testing data to above. 
   
-```{verbatim augment}
-train_aug <- augment(slr_train)
-
+```{r augment}
+train_aug <- augment(slr_train, new_data = train_split)
 train_aug
 ```
 
@@ -301,8 +351,8 @@ We should also verify this condition with a plot of the residuals vs. fitted (pr
 
 - In the code chunk below titled `fitted-residual`, replace "verbatim" with "r" just before the code chunk title. 
   
-```{verbatim fitted-residual}
-ggplot(data = train_aug, aes(x = .fitted, y = .resid)) +
+```{r fitted-residual}
+ggplot(data = train_aug, aes(x = .pred, y = .resid)) +
   geom_point() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   xlab("Fitted values") +
@@ -317,12 +367,14 @@ Answer the following question:
 
 11. Is there any apparent pattern in the residuals plot?
   What does this indicate about the linearity of the relationship between the two variables?
+  No pattern as points are randomly dispersed. It indicates the assumption of 
+  linearity has not been violated.
 
 **Nearly normal residuals**: To check this condition, we can look at a histogram of the residuals.
 
 - In the code chunk below titled `residual-histogram`, replace "verbatim" with "r" just before the code chunk title. 
  
-```{verbatim residual-hist}
+```{r residual-hist}
 ggplot(data = train_aug, aes(x = .resid)) +
   geom_histogram(binwidth = 0.25) +
   xlab("Residuals")
@@ -338,7 +390,7 @@ Answer the following question:
 
 13. Based on the residuals vs. fitted plot, does the constant variability condition appear to be violated?
   Why or why not?
-
+  Constant variability has not been violated. Points are evenly distributed along the predicted values
 
 
 ## Attribution

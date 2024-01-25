@@ -110,11 +110,26 @@ that reads in the above linked CSV file by doing the following:
 - Assign this data set into a data frame named `hfi` (short for “Human
   Freedom Index”).
 
+``` r
+#Loading hfi data
+hfi <- read_csv('hfi.csv')
+```
+
+    ## Rows: 1458 Columns: 123
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr   (3): ISO_code, countries, region
+    ## dbl (120): year, pf_rol_procedural, pf_rol_civil, pf_rol_criminal, pf_rol, p...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
 After doing this and viewing the loaded data, answer the following
 questions:
 
-1.  What are the dimensions of the dataset? What does each row
-    represent?
+1.  What are the dimensions of the dataset? (1458,123)
+
+What does each row represent?
 
 The dataset spans a lot of years. We are only interested in data from
 year 2016. In the R code chunk below titled `hfi-2016`, type the code
@@ -122,6 +137,10 @@ that does the following:
 
 - Filter the data `hfi` data frame for year 2016, and
 - Assigns the result to a data frame named `hfi_2016`.
+
+``` r
+hfi_2016 <- hfi %>% filter(year == 2016)
+```
 
 ### 1. Identify our research question(s)
 
@@ -141,14 +160,37 @@ Answer the following questions (use your markdown skills) and complete
 the following tasks.
 
 2.  What type of plot would you use to display the distribution of the
-    personal freedom scores, `pf_score`? Would this be the same type of
-    plot to display the distribution of the political pressures and
-    controls on media content index, `pf_expression_control`?
+    personal freedom scores, `pf_score`? Histogram Would this be the
+    same type of plot to display the distribution of the political
+    pressures and controls on media content index,
+    `pf_expression_control`?
+
+Yes
 
 - In the R code chunk below titled `univariable-plots`, type the R code
   that displays this plot for `pf_score`.
 - In the R code chunk below titled `univariable-plots`, type the R code
   that displays this plot for `pf_expression_control`.
+
+``` r
+#histogram of pf_score
+hfi_2016 %>% 
+  ggplot(aes(x=pf_score))+
+  geom_histogram(binwidth = 0.25) +
+  ggtitle("univariate-plot")
+```
+
+![](activity02_files/figure-gfm/distribution-plots-1.png)<!-- -->
+
+``` r
+#histogram of pf_expression_control
+hfi_2016 %>% 
+  ggplot(aes(x=pf_expression_control))+
+  geom_histogram(binwidth = 0.25) +
+  ggtitle("univariate-plot")
+```
+
+![](activity02_files/figure-gfm/distribution-plots-2.png)<!-- -->
 
 4.  Comment on each of these two distributions. Be sure to describe
     their centers, spread, shape, and any potential outliers.
@@ -156,12 +198,24 @@ the following tasks.
 5.  What type of plot would you use to display the relationship between
     the personal freedom score, `pf_score`, and the political pressures
     and controls on media content index,`pf_expression_control`?
+    Scatterplot
 
 - In the R code chunk below titled `relationship-plot`, plot this
   relationship using the variable `pf_expression_control` as the
   predictor/explanatory variable.
 
-4.  Does the relationship look linear? If you knew a country’s
+``` r
+hfi_2016 %>% 
+  ggplot(aes(x=pf_score, y= pf_expression_control)) +
+  geom_point() + geom_smooth(method=lm) + 
+  ggtitle('relationship-plot')
+```
+
+    ## `geom_smooth()` using formula = 'y ~ x'
+
+![](activity02_files/figure-gfm/relationship-plot-1.png)<!-- -->
+
+4.  Does the relationship look linear? Yes If you knew a country’s
     `pf_expression_control`, or its score out of 10, with 0 being the
     most, of political pressures and controls on media content, would
     you be comfortable using a linear model to predict the personal
@@ -173,12 +227,69 @@ For each plot and using your `{dplyr}` skills, obtain the appropriate
 numerical summary statistics and provide more detailed descriptions of
 these plots. For example, in (4) you were asked to comment on the
 center, spread, shape, and potential outliers. What measures
-could/should be used to describe these? You might not know of one for
-each of those terms.
+could/should be used to describe these? mean, standard deviation,
+skewness, lower and upper quartiles You might not know of one for each
+of those terms.
 
 What numerical summary would you use to describe the relationship
 between two numerical variables? (hint: explore the `cor` function from
 Base R)
+
+``` r
+library(e1071)
+```
+
+    ## 
+    ## Attaching package: 'e1071'
+
+    ## The following object is masked from 'package:tune':
+    ## 
+    ##     tune
+
+    ## The following object is masked from 'package:rsample':
+    ## 
+    ##     permutations
+
+    ## The following object is masked from 'package:parsnip':
+    ## 
+    ##     tune
+
+``` r
+sum_stats_pf_score <- hfi_2016 %>% 
+  dplyr::summarize(mean_pf_score = mean(pf_score), std_pf_score = sd(pf_score), skew_pf_score = skewness(pf_score), min_pf_score = min(pf_score),
+                   max_pf_score = max(pf_score)) 
+print(sum_stats_pf_score)
+```
+
+    ## # A tibble: 1 × 5
+    ##   mean_pf_score std_pf_score skew_pf_score min_pf_score max_pf_score
+    ##           <dbl>        <dbl>         <dbl>        <dbl>        <dbl>
+    ## 1          6.98         1.49        -0.390         2.17         9.40
+
+``` r
+sum_stats_pf_expression_control <- hfi_2016 %>% 
+  dplyr::summarize(mean_pf_expression_control = mean(pf_expression_control), std_pf_expression_control = sd(pf_expression_control),
+                   skew_pf_expression_control = skewness(pf_expression_control), min_pf_expression_control = min(pf_expression_control),
+                   max_pf_expression_control = max(pf_expression_control)) 
+
+print(sum_stats_pf_expression_control)
+```
+
+    ## # A tibble: 1 × 5
+    ##   mean_pf_expression_control std_pf_expression_control skew_pf_expression_cont…¹
+    ##                        <dbl>                     <dbl>                     <dbl>
+    ## 1                       4.98                      2.32                   -0.0656
+    ## # ℹ abbreviated name: ¹​skew_pf_expression_control
+    ## # ℹ 2 more variables: min_pf_expression_control <dbl>,
+    ## #   max_pf_expression_control <dbl>
+
+``` r
+# Correlation Coefficient
+correlation_coefficient <-cor(hfi_2016$pf_score, hfi_2016$pf_expression_control)
+correlation_coefficient
+```
+
+    ## [1] 0.8450646
 
 ### 3. Fit a simple linear regression model
 
@@ -194,13 +305,17 @@ To begin, we will create a `{parsnip}` specification for a linear model.
 - In the code chunk below titled `parsnip-spec`, replace “verbatim” with
   “r” just before the code chunk title.
 
-``` default
+``` r
 lm_spec <- linear_reg() %>%
   set_mode("regression") %>%
   set_engine("lm")
 
 lm_spec
 ```
+
+    ## Linear Regression Model Specification (regression)
+    ## 
+    ## Computational engine: lm
 
 Note that the `set_mode("regression")` is really unnecessary/redundant
 as linear models (`"lm"`) can only be regression models. It is better to
@@ -221,12 +336,18 @@ knitted document to see how this syntax appears.
 - In the code chunk below titled `fit-lm`, replace “verbatim” with “r”
   just before the code chunk title.
 
-``` default
+``` r
 slr_mod <- lm_spec %>% 
   fit(pf_score ~ pf_expression_control, data = hfi_2016)
 
 tidy(slr_mod)
 ```
+
+    ## # A tibble: 2 × 5
+    ##   term                  estimate std.error statistic  p.value
+    ##   <chr>                    <dbl>     <dbl>     <dbl>    <dbl>
+    ## 1 (Intercept)              4.28     0.149       28.8 4.23e-65
+    ## 2 pf_expression_control    0.542    0.0271      20.0 2.31e-45
 
 The above code fits our SLR model, then provides a `tidy` parameter
 estimates table.
@@ -235,10 +356,13 @@ estimates table.
     parameters. That is, replace “intercept” and “slope” with the
     appropriate values
 
-$\hat{\texttt{pf\score}} = intercept + slope \times \texttt{pf\_expression\_control}$
+$\hat{\texttt{pf\score}} = 4.2838153 + 0.5418452 \times \texttt{pf\_expression\_control}$
 
 6.  Interpret each of the estimated parameters from (5) in the context
-    of this research question. That is, what do these values represent?
+    of this research question. The “slope”- for every unit increase in
+    pf_expression_score the pf_score increases 0.54 times. The
+    “intercept” - The pf_score is 4.28 when pf_expression_score is 0.
+    That is, what do these values represent?
 
 ## Day 2
 
@@ -266,17 +390,24 @@ is also where `tidy` is from) to access this information.
 - In the code chunk below titled `glance-lm`, replace “verbatim” with
   “r” just before the code chunk title.
 
-``` default
+``` r
 glance(slr_mod)
 ```
 
+    ## # A tibble: 1 × 12
+    ##   r.squared adj.r.squared sigma statistic  p.value    df logLik   AIC   BIC
+    ##       <dbl>         <dbl> <dbl>     <dbl>    <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1     0.714         0.712 0.799      400. 2.31e-45     1  -193.  391.  400.
+    ## # ℹ 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
+
 After doing this and running the code, answer the following questions:
 
-7.  What is the value of $R^2$ for this model?
+7.  What is the value of $R^2$ for this model? 0.7141342
 
 8.  What does this value mean in the context of this model? Think about
     what would a “good” value of $R^2$ would be? Can/should this value
-    be “perfect”?
+    be “perfect”? 71.41% of the variation in the response variable is
+    explained by the model.
 
 #### 4.B: Assess with test/train
 
@@ -296,18 +427,31 @@ the following
 - Using your initial split R object, assign the two splits into a
   training R object and a testing R object.
 
+``` r
+set.seed(123)
+hfi_split <- initial_split(hfi_2016, prop = 0.80)
+train_split <- training(hfi_split)
+test_split <- testing(hfi_split)
+```
+
 Now, you will use your training dataset to fit a SLR model.
 
 - In the code chunk below titled `train-fit-lm`, replace “verbatim” with
   “r” just before the code chunk title and update the data set to your
   training R object you just created.
 
-``` default
+``` r
 slr_train <- lm_spec %>% 
-  fit(pf_score ~ pf_expression_control, data = hfi_2016)
+  fit(pf_score ~ pf_expression_control, data = train_split)
 
 tidy(slr_train)
 ```
+
+    ## # A tibble: 2 × 5
+    ##   term                  estimate std.error statistic  p.value
+    ##   <chr>                    <dbl>     <dbl>     <dbl>    <dbl>
+    ## 1 (Intercept)              4.32     0.166       26.1 7.85e-53
+    ## 2 pf_expression_control    0.536    0.0299      17.9 1.41e-36
 
 Notice that you can reuse the `lm_spec` specification because we are
 still doing a linear model.
@@ -327,10 +471,31 @@ Now we will assess using the testing data set.
   “r” just before the code chunk title and update `data_test` to
   whatever R object you assigned your testing data to above.
 
-``` default
-test_aug <- augment(slr_train, new_data = data_test)
+``` r
+test_aug <- augment(slr_train, new_data= test_split)
 test_aug
 ```
+
+    ## # A tibble: 33 × 125
+    ##     year ISO_code countries  region               pf_rol_procedural pf_rol_civil
+    ##    <dbl> <chr>    <chr>      <chr>                            <dbl>        <dbl>
+    ##  1  2016 DZA      Algeria    Middle East & North…             NA           NA   
+    ##  2  2016 AGO      Angola     Sub-Saharan Africa               NA           NA   
+    ##  3  2016 BHR      Bahrain    Middle East & North…             NA           NA   
+    ##  4  2016 BLZ      Belize     Latin America & the…              4.75         4.74
+    ##  5  2016 BOL      Bolivia    Latin America & the…              3.70         3.36
+    ##  6  2016 BWA      Botswana   Sub-Saharan Africa                5.33         6.06
+    ##  7  2016 CAN      Canada     North America                     8.62         7.18
+    ##  8  2016 CPV      Cape Verde Sub-Saharan Africa               NA           NA   
+    ##  9  2016 CHN      China      East Asia                         3.95         5.38
+    ## 10  2016 EGY      Egypt      Middle East & North…              2.95         3.76
+    ## # ℹ 23 more rows
+    ## # ℹ 119 more variables: pf_rol_criminal <dbl>, pf_rol <dbl>,
+    ## #   pf_ss_homicide <dbl>, pf_ss_disappearances_disap <dbl>,
+    ## #   pf_ss_disappearances_violent <dbl>, pf_ss_disappearances_organized <dbl>,
+    ## #   pf_ss_disappearances_fatalities <dbl>, pf_ss_disappearances_injuries <dbl>,
+    ## #   pf_ss_disappearances <dbl>, pf_ss_women_fgm <dbl>,
+    ## #   pf_ss_women_missing <dbl>, pf_ss_women_inheritance_widows <dbl>, …
 
 This takes your SLR model and applies it to your testing data.
 
@@ -364,11 +529,31 @@ these.
   just before the code chunk title and update `data_test` to whatever R
   object you assigned your testing data to above.
 
-``` default
-train_aug <- augment(slr_train)
-
+``` r
+train_aug <- augment(slr_train, new_data = train_split)
 train_aug
 ```
+
+    ## # A tibble: 129 × 125
+    ##     year ISO_code countries      region           pf_rol_procedural pf_rol_civil
+    ##    <dbl> <chr>    <chr>          <chr>                        <dbl>        <dbl>
+    ##  1  2016 VNM      Vietnam        South Asia                    5.38         4.45
+    ##  2  2016 BEL      Belgium        Western Europe                8.67         7.34
+    ##  3  2016 FIN      Finland        Western Europe                9.50         7.96
+    ##  4  2016 PER      Peru           Latin America &…              6.17         4.41
+    ##  5  2016 DOM      Dominican Rep. Latin America &…              5.24         4.54
+    ##  6  2016 ZMB      Zambia         Sub-Saharan Afr…              3.30         4.89
+    ##  7  2016 ZWE      Zimbabwe       Sub-Saharan Afr…              2.43         4.33
+    ##  8  2016 UKR      Ukraine        Eastern Europe                4.77         5.14
+    ##  9  2016 MKD      Macedonia      Eastern Europe                4.68         5.63
+    ## 10  2016 MDG      Madagascar     Sub-Saharan Afr…              3.33         3.93
+    ## # ℹ 119 more rows
+    ## # ℹ 119 more variables: pf_rol_criminal <dbl>, pf_rol <dbl>,
+    ## #   pf_ss_homicide <dbl>, pf_ss_disappearances_disap <dbl>,
+    ## #   pf_ss_disappearances_violent <dbl>, pf_ss_disappearances_organized <dbl>,
+    ## #   pf_ss_disappearances_fatalities <dbl>, pf_ss_disappearances_injuries <dbl>,
+    ## #   pf_ss_disappearances <dbl>, pf_ss_women_fgm <dbl>,
+    ## #   pf_ss_women_missing <dbl>, pf_ss_women_inheritance_widows <dbl>, …
 
 **Linearity**: You already checked if the relationship between
 `pf_score` and `pf_expression_control` is linear using a scatterplot. We
@@ -378,13 +563,15 @@ vs. fitted (predicted) values.
 - In the code chunk below titled `fitted-residual`, replace “verbatim”
   with “r” just before the code chunk title.
 
-``` default
-ggplot(data = train_aug, aes(x = .fitted, y = .resid)) +
+``` r
+ggplot(data = train_aug, aes(x = .pred, y = .resid)) +
   geom_point() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   xlab("Fitted values") +
   ylab("Residuals")
 ```
+
+![](activity02_files/figure-gfm/fitted-residual-1.png)<!-- -->
 
 Notice here that `train_aug` can also serve as a data set because stored
 within it are the fitted values ($\hat{y}$) and the residuals. Also note
@@ -398,7 +585,8 @@ Answer the following question:
 
 11. Is there any apparent pattern in the residuals plot? What does this
     indicate about the linearity of the relationship between the two
-    variables?
+    variables? No pattern as points are randomly dispersed. It indicates
+    the assumption of linearity has not been violated.
 
 **Nearly normal residuals**: To check this condition, we can look at a
 histogram of the residuals.
@@ -406,11 +594,13 @@ histogram of the residuals.
 - In the code chunk below titled `residual-histogram`, replace
   “verbatim” with “r” just before the code chunk title.
 
-``` default
+``` r
 ggplot(data = train_aug, aes(x = .resid)) +
   geom_histogram(binwidth = 0.25) +
   xlab("Residuals")
 ```
+
+![](activity02_files/figure-gfm/residual-hist-1.png)<!-- -->
 
 Answer the following question:
 
@@ -421,6 +611,8 @@ Answer the following question:
 
 13. Based on the residuals vs. fitted plot, does the constant
     variability condition appear to be violated? Why or why not?
+    Constant variability has not been violated. Points are evenly
+    distributed along the predicted values
 
 ## Attribution
 
